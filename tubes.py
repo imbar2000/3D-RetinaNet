@@ -51,7 +51,7 @@ def build_eval_tubes(args, val_dataset):
         if args.JOINT_4M_MARGINALS:
             childs = val_dataset.childs
         make_tubes(args, paths, val_dataset.video_list, childs, tube_file)
-
+        print(val_dataset.video_list)
         # torch.cuda.synchronize()
         logger.info('Computation time {:0.2f}'.format(time.perf_counter() - tt0))
 

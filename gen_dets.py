@@ -21,7 +21,6 @@ from modules.utils import make_joint_probs_from_marginals
 logger = utils.get_logger(__name__)
 
 def gen_dets(args, net, val_dataset):
-    
     net.eval()
     val_data_loader = data_utils.DataLoader(val_dataset, int(args.TEST_BATCH_SIZE), num_workers=args.NUM_WORKERS,
                                  shuffle=False, pin_memory=True, collate_fn=custum_collate)
@@ -153,6 +152,7 @@ def perform_detection(args, net,  val_data_loader, val_dataset, iteration):
                     save_name = '{:s}/{:05d}.pkl'.format(save_dir, frame_num+1)
                     frame_num += step_size
                     save_data = {'ego':ego_preds[b,s,:], 'main':save_data}
+                    #print("{} save data: {}".format(save_name, save_data))
                     if s<seq_len-args.skip_ending or store_last:
                         with open(save_name,'wb') as ff:
                             pickle.dump(save_data, ff)

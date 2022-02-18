@@ -20,11 +20,11 @@ def str2bool(v):
 
 def main():
     parser = argparse.ArgumentParser(description='Training single stage FPN with OHEM, resnet as backbone')
-    parser.add_argument('DATA_ROOT', help='Location to root directory for dataset reading') # /mnt/mars-fast/datasets/
-    parser.add_argument('SAVE_ROOT', help='Location to root directory for saving checkpoint models') # /mnt/mars-alpha/
-    parser.add_argument('MODEL_PATH',help='Location to root directory where kinetics pretrained models are stored')
+    parser.add_argument('--DATA_ROOT', default='datasets/', help='Location to root directory for dataset reading') # /mnt/mars-fast/datasets/
+    parser.add_argument('--SAVE_ROOT', default='checkpoints/', help='Location to root directory for saving checkpoint models') # /mnt/mars-alpha/
+    parser.add_argument('--MODEL_PATH',default='kinetics-pt/', help='Location to root directory where kinetics pretrained models are stored')
     
-    parser.add_argument('--MODE', default='train',
+    parser.add_argument('--MODE', default='eval_tubes',
                         help='MODE can be train, gen_dets, eval_frames, eval_tubes define SUBSETS accordingly, build tubes')
     # Name of backbone network, e.g. resnet18, resnet34, resnet50, resnet101 resnet152 are supported
     parser.add_argument('--ARCH', default='resnet50', 
@@ -54,11 +54,11 @@ def main():
                     type=int, help='Temporal kernel size of regression head')
     
     #  Name of the dataset only voc or coco are supported
-    parser.add_argument('--DATASET', default='road', 
+    parser.add_argument('--DATASET', default='ucf24', 
                         type=str,help='dataset being used')
-    parser.add_argument('--TRAIN_SUBSETS', default='train_3,', 
+    parser.add_argument('--TRAIN_SUBSETS', default='train,', 
                         type=str,help='Training SUBSETS seprated by ,')
-    parser.add_argument('--VAL_SUBSETS', default='', 
+    parser.add_argument('--VAL_SUBSETS', default='val', 
                         type=str,help='Validation SUBSETS seprated by ,')
     parser.add_argument('--TEST_SUBSETS', default='', 
                         type=str,help='Testing SUBSETS seprated by ,')
@@ -82,7 +82,7 @@ def main():
     parser.add_argument('--MAX_EPOCHS', default=30, 
                         type=int, help='Number of training epoc')
     parser.add_argument('-l','--LR', '--learning-rate', 
-                        default=0.004225, type=float, help='initial learning rate')
+                        default=0.00245, type=float, help='initial learning rate')
     parser.add_argument('--MOMENTUM', default=0.9, 
                         type=float, help='momentum')
     parser.add_argument('--MILESTONES', default='20,25', 
@@ -104,7 +104,7 @@ def main():
     parser.add_argument('--NEGTIVE_THRESHOLD', default=0.4,
                         type=float, help='Max threshold Jaccard index for matching')
     # Evaluation hyperparameters
-    parser.add_argument('--EVAL_EPOCHS', default='30', 
+    parser.add_argument('--EVAL_EPOCHS', default='5', 
                         type=str, help='eval epochs to test network on these epoch checkpoints usually the last epoch is used')
     parser.add_argument('--VAL_STEP', default=2, 
                         type=int, help='Number of training epoch before evaluation')
@@ -114,13 +114,13 @@ def main():
                         type=float, help='Confidence threshold for to remove detection below given number')
     parser.add_argument('--NMS_THRESH', default=0.5, 
                         type=float, help='NMS threshold to apply nms at the time of validation')
-    parser.add_argument('--TOPK', default=10, 
+    parser.add_argument('--TOPK', default=20, 
                         type=int, help='topk detection to keep for evaluation')
     parser.add_argument('--GEN_CONF_THRESH', default=0.025, 
                         type=float, help='Confidence threshold at the time of generation and dumping')
     parser.add_argument('--GEN_TOPK', default=100, 
                         type=int, help='topk at the time of generation')
-    parser.add_argument('--GEN_NMS', default=0.5, 
+    parser.add_argument('--GEN_NMS', default=0.8, 
                         type=float, help='NMS at the time of generation')
     parser.add_argument('--CLASSWISE_NMS', default=False, 
                         type=str2bool, help='apply classwise NMS/no tested properly')
@@ -130,7 +130,7 @@ def main():
     ## paths hyper parameters
     parser.add_argument('--COMPUTE_PATHS', default=False, 
                         type=str2bool, help=' COMPUTE_PATHS if set true then it overwrite existing ones')
-    parser.add_argument('--PATHS_IOUTH', default=0.5,
+    parser.add_argument('--PATHS_IOUTH', default=0.25,
                         type=float, help='Iou threshold for building paths to limit neighborhood search')
     parser.add_argument('--PATHS_COST_TYPE', default='score',
                         type=str, help='cost function type to use for matching, other options are scoreiou, iou')
@@ -145,7 +145,7 @@ def main():
     parser.add_argument('--COMPUTE_TUBES', default=False, type=str2bool, help='if set true then it overwrite existing tubes')
     parser.add_argument('--TUBES_ALPHA', default=0,
                         type=float, help='alpha cost for changeing the label')
-    parser.add_argument('--TRIM_METHOD', default='none',
+    parser.add_argument('--TRIM_METHOD', default='indiv',
                         type=str, help='other one is indiv which works for UCF24')
     parser.add_argument('--TUBES_TOPK', default=10,
                         type=int, help='Number of labels to assign for a tube')
@@ -177,6 +177,7 @@ def main():
 
     args = utils.set_args(args) # set directories and SUBSETS fo datasets
     args.MULTI_GPUS = False if args.BATCH_SIZE == 1 else args.MULTI_GPUS
+    
     ## set random seeds and global settings
     np.random.seed(args.MAN_SEED)
     torch.manual_seed(args.MAN_SEED)
@@ -184,6 +185,7 @@ def main():
     torch.set_default_tensor_type('torch.FloatTensor')
 
     args = utils.create_exp_name(args)
+    print(args)
 
     utils.setup_logger(args)
     logger = utils.get_logger(__name__)
