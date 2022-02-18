@@ -24,7 +24,7 @@ def main():
     parser.add_argument('--SAVE_ROOT', default='../checkpoints/', help='Location to root directory for saving checkpoint models') # /mnt/mars-alpha/
     parser.add_argument('--MODEL_PATH',default='../kinetics-pt/', help='Location to root directory where kinetics pretrained models are stored')
     
-    parser.add_argument('--MODE', default='gen_dets',
+    parser.add_argument('--MODE', default='eval_tubes',
                         help='MODE can be train, gen_dets, eval_frames, eval_tubes define SUBSETS accordingly, build tubes')
     # Name of backbone network, e.g. resnet18, resnet34, resnet50, resnet101 resnet152 are supported
     parser.add_argument('--ARCH', default='resnet50', 
