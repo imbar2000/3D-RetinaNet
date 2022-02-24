@@ -19,12 +19,13 @@ def str2bool(v):
 
 
 def main():
+    baseDir = "../3D-RetinaNet_weights/"
     parser = argparse.ArgumentParser(description='Training single stage FPN with OHEM, resnet as backbone')
-    parser.add_argument('--DATA_ROOT', default='../datasets/', help='Location to root directory for dataset reading') # /mnt/mars-fast/datasets/
-    parser.add_argument('--SAVE_ROOT', default='../checkpoints/', help='Location to root directory for saving checkpoint models') # /mnt/mars-alpha/
-    parser.add_argument('--MODEL_PATH',default='../kinetics-pt/', help='Location to root directory where kinetics pretrained models are stored')
+    parser.add_argument('--DATA_ROOT', default=baseDir+'datasets/', help='Location to root directory for dataset reading') # /mnt/mars-fast/datasets/
+    parser.add_argument('--SAVE_ROOT', default=baseDir+'checkpoints/', help='Location to root directory for saving checkpoint models') # /mnt/mars-alpha/
+    parser.add_argument('--MODEL_PATH',default=baseDir+'kinetics-pt/model_000005.pth', help='Location to root directory where kinetics pretrained models are stored')
     
-    parser.add_argument('--MODE', default='eval_tubes',
+    parser.add_argument('--MODE', default='gen_dets',
                         help='MODE can be train, gen_dets, eval_frames, eval_tubes define SUBSETS accordingly, build tubes')
     # Name of backbone network, e.g. resnet18, resnet34, resnet50, resnet101 resnet152 are supported
     parser.add_argument('--ARCH', default='resnet50', 

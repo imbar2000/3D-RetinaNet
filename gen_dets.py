@@ -52,8 +52,10 @@ def gen_dets(args, net, val_dataset):
         if is_all_done:
             print('All done! skipping detection')
             continue
-        
-        args.MODEL_PATH = args.SAVE_ROOT + 'model_{:06d}.pth'.format(epoch)
+
+        # print(args.MODEL_PATH)
+        # args.MODEL_PATH = args.SAVE_ROOT + 'model_{:06d}.pth'.format(epoch)
+        print("loading model: ", args.MODEL_PATH)
         net.load_state_dict(torch.load(args.MODEL_PATH))
         
         logger.info('Finished loading model %d !' % epoch )

@@ -287,13 +287,13 @@ class VideoDataset(tutils.data.Dataset):
         default_ego_label[0] = 1
         total_labeled_frame = 0
         total_num_frames = 0
+
         for videoname in sorted(database.keys()):
             
             is_part = 1
-            if 'train' in self.SUBSETS and videoname not in self.trainvideos:
+            if not self.train and videoname in self.trainvideos:
                 continue
-            elif 'test' in self.SUBSETS and videoname in self.trainvideos:
-                continue
+            
             # print(database[videoname].keys())
             action_id = database[videoname]['label']
             annotations = database[videoname]['annotations']
