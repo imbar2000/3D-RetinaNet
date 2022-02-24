@@ -128,7 +128,7 @@ def main():
                         type=str2bool, help='generate score of joints i.e. duplexes or triplet by marginals like agents and actions scores')
     
     ## paths hyper parameters
-    parser.add_argument('--COMPUTE_PATHS', default=False, 
+    parser.add_argument('--COMPUTE_PATHS', default=True, 
                         type=str2bool, help=' COMPUTE_PATHS if set true then it overwrite existing ones')
     parser.add_argument('--PATHS_IOUTH', default=0.25,
                         type=float, help='Iou threshold for building paths to limit neighborhood search')
@@ -142,7 +142,7 @@ def main():
                         type=float, help='minimum score a path should have over its length')
     
     ## paths hyper parameters
-    parser.add_argument('--COMPUTE_TUBES', default=False, type=str2bool, help='if set true then it overwrite existing tubes')
+    parser.add_argument('--COMPUTE_TUBES', default=True, type=str2bool, help='if set true then it overwrite existing tubes')
     parser.add_argument('--TUBES_ALPHA', default=0,
                         type=float, help='alpha cost for changeing the label')
     parser.add_argument('--TRIM_METHOD', default='indiv',

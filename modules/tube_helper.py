@@ -57,13 +57,24 @@ def make_gt_tube(frames, boxes, label_id):
 
 def trim_tubes(start_id, numc, paths, childs, num_classes_list, topk=5, alpha=3, min_len=3, trim_method='None'):
     """ Trim the paths into tubes using DP"""
+    print("start_id: ", start_id)
+    print("numc: ", numc)
+    print("paths.len(): ", len(paths))  #box个数
+    print("paths[2]: ", paths[2])
+    print("childs: ", childs)
+    print("num_classes_list: ", num_classes_list)
+    print("topk=%d, alpha=%d, min_len=%d, trim_method=%s" % (topk, alpha, min_len, trim_method))
+
     tubes = []
-    for path in paths:
+    for index_path, path in enumerate(paths):  
+        # print("===============")
+        # print("path%d : %r " % (index_path, path))
+        # print("---------")
         if len(childs)>0:
             allScores = make_joint_probs_from_marginals(path['allScores'], childs, num_classes_list, start_id=0)
         else:
-            allScores = path['allScores']
-        allScores = allScores[:,start_id:start_id+numc]
+            allScores = path['allScores']                   # shape=(n, 25)
+        allScores = allScores[:,start_id:start_id+numc]     # n-1, ... 0, 到当前帧为止的, 所有类别的score, shape=(n, 24)
         path_start_frame = path['foundAt'][0]
         if allScores.shape[0]<=min_len:
             continue
@@ -77,6 +88,7 @@ def trim_tubes(start_id, numc, paths, childs, num_classes_list, topk=5, alpha=3,
                 if end-start+1 > min_len:
                     # tube = get_nonnp_det_tube(allScores[:,label], path['boxes'], int(start), int(end), int(label))
                     tube = get_nonnp_det_tube(allScores[:,label], path['boxes'], int(start), int(end), int(label), score=topk_scores[i])
+                    # print("tube %d, : %r" % (i, tube))
                     tubes.append(tube)
         elif trim_method == 'dpscores': ## standarded method Multi class-DP
             allScores = path['allScores'][:,start_id:start_id+numc]
@@ -95,7 +107,6 @@ def trim_tubes(start_id, numc, paths, childs, num_classes_list, topk=5, alpha=3,
                         tube = get_nonnp_det_tube(scores, boxes, int(start), int(end), int(labels[i]))
                         tubes.append(tube)
                         score_mat[labels[i], starts[i]:ends[i]+1] = 0.0
-
         elif trim_method == 'dpscorestopn': ## bit fancy only select top segments
             score_mat = np.transpose(allScores.copy())
             for _ in range(topk):
@@ -140,32 +151,34 @@ def trim_tubes(start_id, numc, paths, childs, num_classes_list, topk=5, alpha=3,
             topk_classes, topk_scores = get_topk_classes(allScores, topk)
             for idx in range(topk_classes.shape[0]):
                 current_label = int(topk_classes[idx])
-                if numc == 24:
-                    in_scores = path['allScores'][:,start_id-1]
+                if numc == 24:                                      # 一直是ture
+                    in_scores = path['allScores'][:,start_id-1]     # 目标score, 
                 else:
-                    in_scores = allScores[:,current_label]
+                    in_scores = allScores[:,current_label]          # 按类别的score
 
-                smooth_scores = signal.medfilt(in_scores, 5)
+                smooth_scores = signal.medfilt(in_scores, 5)    #中值滤波
                 smooth_scores = in_scores/np.max(smooth_scores)
-                score_mat =  np.hstack((smooth_scores[:, np.newaxis], 1 - smooth_scores[:, np.newaxis])) 
+                score_mat =  np.hstack((smooth_scores[:, np.newaxis], 1 - smooth_scores[:, np.newaxis]))    # score 和 1-score
                 score_mat = np.transpose(score_mat.copy())
-                (segments, _) = dpEMmax(score_mat, alphas[current_label])
+                (segments, _) = dpEMmax(score_mat, alphas[current_label])   # 把path分段, 例如: segmeng=[1,1,5,5,5], 表示分成2段, 前2帧一段,label是1; 后三帧一段,label是5
                 labels, starts, ends = getLabels(segments)
                 for i in range(len(labels)):
                     if ends[i] - starts[i] >= min_len and labels[i]==0:
-                        scores = allScores[starts[i]:ends[i]+1, current_label]
-                        sorted_classes = np.argsort(-scores)
-                        sorted_scores = scores[sorted_classes]
-                        topn = max(1,int(sorted_scores.shape[0]/2))
-                        mscore = np.mean(sorted_scores[:topn])
+                        scores = allScores[starts[i]:ends[i]+1, current_label]  # current_label类别的, 所有box的score
+                        sorted_classes = np.argsort(-scores)                    # 排序box的index
+                        sorted_scores = scores[sorted_classes]                  # 排序box的分数
+                        topn = max(1,int(sorted_scores.shape[0]/2))             # topn的score
+                        mscore = np.mean(sorted_scores[:topn])                  # tube的分数 = mean(topn(box的cur类别分数))
                         boxes = path['boxes'][starts[i]:ends[i]+1, :]
                         start = starts[i] + path_start_frame
                         end = ends[i] + path_start_frame + 1
                         sf = max(1,int(start)-aa)
                         ef = int(end)-(start-sf)
                         tube = get_nonnp_det_tube(scores, boxes, sf, ef, int(current_label), score=mscore) #topk_scores[idx])
+                        # print("top10_class:%d, segment:%d, tube: %r" % (idx, i, tube))
                         tubes.append(tube)
                         # score_mat[labels[i], starts[i]:ends[i]+1] = 0.0
+    print("len(tubes)=%d" % len(tubes))
     return tubes
 
 def getLabels(segments, cls=1):
@@ -189,29 +202,33 @@ def getLabels(segments, cls=1):
     ends[i] = len(segments)-1
     return labels[:i+1],starts[:i+1],ends[:i+1]
 
+# 返回box的topK个 类别, 对应的分数
+# 分数计算方法 类别k的分数 = mean(top6(box在k类别分数))
 def get_topk_classes(allScores, topk):
+    # allScores.shape=(nBox, 24)
     scores = np.zeros(allScores.shape[1])
     # print(scores.shape)
     topn = max(1, allScores.shape[1]//4)
-    for k in range(scores.shape[0]):
+    for k in range(scores.shape[0]):    #遍历类别
         temp_scores = allScores[:,k]
         sorted_score = np.sort(-temp_scores)
         # print(sorted_score[:topn])
-        scores[k] = np.mean(-sorted_score[:topn])
-    sorted_classes = np.argsort(-scores)
-    sorted_scores = scores[sorted_classes]
+        scores[k] = np.mean(-sorted_score[:topn])   # 类别k的分数= mean(top6(box在k类别分数))
+    sorted_classes = np.argsort(-scores)            # 类别排序,从高到低
+    sorted_scores = scores[sorted_classes]          # 排序后的分数
     # sorted_scores = sorted_scores/np.sum(sorted_scores)
     # print(sorted_scores)
     return sorted_classes[:topk], sorted_scores[:topk]
 
-
+# 返回 segment, 未知变量
+# segmeng表示把path进行分段, 例如: segmeng=[1,1,5,5,5], 表示分成2段, 前2帧一段,label是1; 后三帧一段,label是5
 def dpEMmax(M, alpha=3):
-    (r,c) = np.shape(M)
+    (r,c) = np.shape(M)     # r=2, c=num box
     D = np.zeros((r, c+1)) # add an extra column
     D[:,0] = 1 # % put the maximum cost
     D[:, 1:(c+1)] = M
     phi = np.zeros((r,c))
-    for j in range(1,c):
+    for j in range(1,c):    #
         for i in range(r):
             v1 = np.ones(r)*alpha
             v1[i] = 0

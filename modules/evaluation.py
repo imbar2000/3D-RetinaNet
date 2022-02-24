@@ -249,10 +249,12 @@ def get_gt_tubes(final_annots, subset, label_type, dataset):
     video_list = []
     tubes = {}
     for videoname in final_annots['db']:
+    # for videoname in sorted(final_annots['db'].keys()):	#only 1 video file, for quick debug
         if dataset == 'road':
             cond = is_part_of_subsets(final_annots['db'][videoname]['split_ids'], [subset])
         else:
             cond = videoname not in final_annots['trainvideos']
+            # cond = True
         if cond:
             video_list.append(videoname)
             if dataset == 'road':
@@ -260,6 +262,7 @@ def get_gt_tubes(final_annots, subset, label_type, dataset):
                     label_type+'_tubes', final_annots, videoname)
             else:
                 tubes[videoname] = get_filtered_tubes_ucf24(final_annots['db'][videoname]['annotations'])
+        #break	#only 1 video file, for quick debug
 
     return video_list, tubes
 
@@ -288,11 +291,11 @@ def compute_class_ap(class_dets, class_gts, match_func, iou_thresh, metric_type=
 
     fn = max(1, sum([len(class_gts[iid])
                         for iid in class_gts]))  # false negatives
-    num_postives = fn
+    num_postives = fn   #gt数量
 
     if len(class_dets) == 0:
         return  0,num_postives ,0,0
-    pr = np.empty((len(class_dets) + 1, 2), dtype=np.float32)
+    pr = np.empty((len(class_dets) + 1, 2), dtype=np.float32)   #PR曲线的数据
     pr[0, 0] = 1.0
     pr[0, 1] = 0.0
 
@@ -303,7 +306,7 @@ def compute_class_ap(class_dets, class_gts, match_func, iou_thresh, metric_type=
     scores = np.zeros(len(class_dets))
     istp = np.zeros(len(class_dets))
 
-    inv_det_scores = np.asarray([-det[1]['score'] for det in class_dets])
+    inv_det_scores = np.asarray([-det[1]['score'] for det in class_dets])   #每个tube的分数
     indexs = np.argsort(inv_det_scores)
     count = 0
     for count, det_id in enumerate(indexs):

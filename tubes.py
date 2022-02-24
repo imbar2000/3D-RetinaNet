@@ -45,7 +45,7 @@ def build_eval_tubes(args, val_dataset):
         tt0 = time.perf_counter()
         log_file.write('Building tubes......\n')
         
-        
+        print(str(val_dataset.video_list[0]))
         paths = perform_building(args, val_dataset.video_list, epoch)
         childs = []
         if args.JOINT_4M_MARGINALS:
@@ -141,6 +141,8 @@ def perform_building(args, video_list, epoch):
                 save_name = '{:s}/{:05d}.pkl'.format(video_dir, frame_num)
                 with open(save_name, 'rb') as f:
                     det_boxes = pickle.load(f)
+                    # print("frame %d det result:")
+                    # print(det_boxes)
                 
                 det_boxes = det_boxes['main']
                 pickn = min(args.TOPK, det_boxes.shape[0])

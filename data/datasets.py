@@ -331,6 +331,7 @@ class VideoDataset(tutils.data.Dataset):
                 for s in range(min(self.num_steps, len(step_list))):
                     video_id = self.video_list.index(videoname)
                     self.ids.append([video_id, frame_num ,step_list[s]])
+            #break	#only 1 video file, for quick debug
 
         logger.info('Labeled frames {:d}/{:d}'.format(total_labeled_frame, total_num_frames))
         # pdb.set_trace()
@@ -349,6 +350,7 @@ class VideoDataset(tutils.data.Dataset):
         self.childs = {}
         self.num_videos = len(self.video_list)
         self.print_str = ptrstr
+        print("num_videos= ", self.num_videos)
         
         
     def _make_lists_road(self):
